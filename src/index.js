@@ -21,12 +21,29 @@ async function getSliceByBlockRef ({path, depth, blockRef, eth, sliceTracker}) {
 }
 
 function lookupAccountInSlice ({slice, address}) {
-  const rest = sha3(address).toString('hex').slice(4).split('')
+  const node = findNode({ slice, key: address })
+  const account = new EthAccount(node)
+  if (account.isEmpty()) {
+    throw new Error('empty account!')
+  }
+  return account
+}
+
+function getStorageFromSlice ({slice, key}) {
+  const node = findNode({slice, key})
+  return rlp.decode(node).toString('hex')
+}
+
+function findNode ({ slice, key }) {
+  const rest = sha3(key).toString('hex').slice(4).split('')
   // TODO: we should calculate the head
   const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
   const sliceNodes = slice.trieNodes.sliceNodes
 
-  let node = sliceNodes ? rlp.decode(`0x${sliceNodes[head[parseInt(rest.shift(), 16)].toString('hex')]}`) : head
+  let node = Object.keys(sliceNodes).length > 0
+    ? rlp.decode(`0x${sliceNodes[head[parseInt(rest.shift(), 16)].toString('hex')]}`)
+    : head
+
   do {
     switch (node.length) {
       case 2:
@@ -38,44 +55,13 @@ function lookupAccountInSlice ({slice, address}) {
             continue
           case 2:
           case 3:
-            const account = new EthAccount(last)
-            if (account.isEmpty()) {
-              throw new Error('empty account!')
-            }
-            return account
+            return last
           default:
             throw new Error('unknown hex prefix on trie node')
         }
     }
 
     node = rlp.decode(`0x${sliceNodes[node[parseInt(rest.shift(), 16)].toString('hex')]}`)
-  } while (rest.length)
-}
-
-function getStorageFromSlice ({slice, key}) {
-  const rest = sha3(key).toString('hex').slice(3).split('')
-  const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
-  const sliceNodes = slice.sliceNodes
-
-  let node = sliceNodes ? sliceNodes[head[parseInt(rest.shift(), 16)]] : head
-  do {
-    switch (node.length) {
-      case 2:
-        const first = node[0].toString('hex')
-        const last = node[1]
-        switch (parseInt(first[0], 16)) {
-          case 0:
-          case 1:
-            continue
-          case 2:
-          case 3:
-            return rlp.decode(last).toString('hex')
-          default:
-            throw new Error('unknown hex prefix on trie node')
-        }
-    }
-
-    node = rlp.decode(sliceNodes[parseInt(rest.shift(), 16)])
   } while (rest.length)
 }
 
