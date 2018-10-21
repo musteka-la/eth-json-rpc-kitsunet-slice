@@ -13,7 +13,7 @@ async function getSliceByBlockRef ({path, depth, blockRef, eth, sliceTracker}) {
   if (blockRef === 'latest') {
     slice = await sliceTracker.getLatestSlice(path, depth)
   } else {
-    const block = await this.eth.getBlockByNumber(blockRef, false)
+    const block = await eth.getBlockByNumber(blockRef, false)
     slice = await sliceTracker.getSliceForBlock(path, depth, block)
   }
 
@@ -26,7 +26,7 @@ function lookupAccountInSlice ({slice, address}) {
   const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
   const sliceNodes = slice.trieNodes.sliceNodes
 
-  let node = rlp.decode(`0x${sliceNodes[head[parseInt(rest.shift(), 16)].toString('hex')]}`)
+  let node = sliceNodes ? rlp.decode(`0x${sliceNodes[head[parseInt(rest.shift(), 16)].toString('hex')]}`) : head
   do {
     switch (node.length) {
       case 2:
@@ -53,11 +53,11 @@ function lookupAccountInSlice ({slice, address}) {
 }
 
 function getStorageFromSlice ({slice, key}) {
-  const rest = key.slice(3).split('')
-  const head = rlp.decode(slice.head)
+  const rest = sha3(key).toString('hex').slice(3).split('')
+  const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
   const sliceNodes = slice.sliceNodes
 
-  let node = sliceNodes[head[parseInt(rest.shift(), 16)]]
+  let node = sliceNodes ? sliceNodes[head[parseInt(rest.shift(), 16)]] : head
   do {
     switch (node.length) {
       case 2:
@@ -69,7 +69,7 @@ function getStorageFromSlice ({slice, key}) {
             continue
           case 2:
           case 3:
-            return last
+            return rlp.decode(last).toString('hex')
           default:
             throw new Error('unknown hex prefix on trie node')
         }
@@ -122,11 +122,10 @@ function createSliceMiddleware ({ sliceTracker, eth, depth }) {
       const [address, key, blockRef] = req.params
       const path = addrToPath(address)
       const slice = await getSliceByBlockRef({path, depth, blockRef, eth, sliceTracker})
-      const account = lookupAccountInSlice({ slice, address })
-      const storageRoot = slice.leaves[account.codeHash].storageRoot
-      const storagePath = key.slice(0, 4)
-      const storageSlice = sliceTracker.getSliceById(`${storagePath}-${depth}-${storageRoot}`)
-      res.result = getStorageFromSlice({ slice: storageSlice, key })
+      const storageRoot = slice.leaves[sha3(address).toString('hex')].storageRoot
+      const storagePath = addrToPath(key)
+      const storageSlice = await sliceTracker.getSliceById(`${storagePath}-${depth}-${storageRoot}`)
+      res.result = `0x${getStorageFromSlice({ slice: storageSlice, key })}`
       end()
     }
   })

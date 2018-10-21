@@ -4,7 +4,7 @@ const LeftPad = require('leftpad')
 
 const [, , address, pos] = process.argv
 
-const key = LeftPad(address, 32) + LeftPad(pos, 32)
+const key = LeftPad(address, 64) + LeftPad(pos, 64)
 console.log(key)
 
 const storage = sha3(Buffer.from(key, 'hex'))

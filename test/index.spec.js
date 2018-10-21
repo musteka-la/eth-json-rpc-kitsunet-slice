@@ -12,7 +12,6 @@ const RpcBlockTracker = require('eth-block-tracker')
 const EthQuery = require('eth-query')
 const TestBlockMiddleware = require('eth-block-tracker/test/util/testBlockMiddleware')
 const createVmMiddleware = require('./create-vm-middleware')
-const abi = require('ethjs-abi')
 
 const createSliceMiddleware = require('../src/index')
 
@@ -21,7 +20,7 @@ const camelCase = require('lodash.camelcase')
 const isPlainObject = require('lodash.isplainobject')
 
 const BALANCE_ADDRESS = '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5' // gnosis
-const TOKEN_HOLDER_ADDRESS = '0x1d805bc00b8fa3c96ae6c8fa97b2fd24b19a9801'
+const TOKEN_HOLDER_STORAGE_KEY = '0x04c7252b79c4d84f9705be5e66c098c238e636b660b234c6c6a46ec04cd00fcc'
 const CONTRACT_ADDRESS = '0x6810e776880c02933d47db1b9fc05908e5386b96'
 
 function normalizeSlice (obj) {
@@ -96,42 +95,19 @@ it('provider - code ref', function (done) {
   })
 })
 
-it('provider - get storage at', async function (done) {
+it('provider - get storage at', function (done) {
   this.timeout(1000000)
-  const { engine, testBlockSource, blockTracker, eth } = createTestSetup()
-
-  // gnosis
-  const tokenABI = [{
-    'constant': true,
-    'inputs': [
-      {
-        'name': '_owner',
-        'type': 'address'
-      }
-    ],
-    'name': 'balanceOf',
-    'outputs': [
-      {
-        'name': 'balance',
-        'type': 'uint256'
-      }
-    ],
-    'payable': false,
-    'type': 'function'
-  }]
-
-  const token = abi.encodeMethod(tokenABI[0], [TOKEN_HOLDER_ADDRESS])
+  const { engine, testBlockSource, blockTracker } = createTestSetup()
 
   // unblock from waiting for block
   testBlockSource.nextBlock()
   blockTracker.start()
 
   // fire request for `test_method`
-  engine.handle({ id: 1, method: 'eth_getStorageAt', params: [TOKEN_HOLDER_ADDRESS, 'latest'] }, (err, res) => {
+  engine.handle({ id: 1, method: 'eth_getStorageAt', params: [CONTRACT_ADDRESS, TOKEN_HOLDER_STORAGE_KEY, 'latest'] }, (err, res) => {
     expect(err).not.to.exist('No error in response')
     expect(res).to.exist('Has response')
-    const balance = parseInt(res.result, 16) / 1e18
-    expect(balance).to.eql(0, 'token balance is incorrect')
+    expect(res.result).to.eql('0x54b40b1f852bda000000', 'token balance is incorrect')
     blockTracker.stop()
     done()
   })
@@ -155,7 +131,7 @@ function createTestSetup () {
       return tokenContractSlice
     }
 
-    if (path === 'e4d0') {
+    if (path === '8e99') {
       return tokenSlice
     }
 
