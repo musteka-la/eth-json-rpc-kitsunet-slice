@@ -1,6 +1,6 @@
 'use strict'
 const scaffold = require('eth-json-rpc-middleware/scaffold')
-const sha3 = require('ethereumjs-util').sha3
+const keccak256 = require('ethereumjs-util').keccak256
 const rlp = require('rlp')
 const EthAccount = require('ethereumjs-account')
 
@@ -35,7 +35,7 @@ function getStorageFromSlice ({slice, key}) {
 }
 
 function findNode ({ slice, key }) {
-  const rest = sha3(key).toString('hex').slice(4).split('')
+  const rest = keccak256(key).toString('hex').slice(4).split('')
   // TODO: we should calculate the head
   const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
   const sliceNodes = slice.trieNodes.sliceNodes
@@ -66,11 +66,11 @@ function findNode ({ slice, key }) {
 }
 
 function lookupCodeInSlice ({slice, address}) {
-  return slice.leaves[sha3(address).toString('hex')].evmCode
+  return slice.leaves[keccak256(address).toString('hex')].evmCode
 }
 
 function addrToPath (address) {
-  const addrHash = sha3(address)
+  const addrHash = keccak256(address)
   return addrHash.toString('hex').slice(0, 4)
 }
 
@@ -108,7 +108,7 @@ function createSliceMiddleware ({ sliceTracker, eth, depth }) {
       const [address, key, blockRef] = req.params
       const path = addrToPath(address)
       const slice = await getSliceByBlockRef({path, depth, blockRef, eth, sliceTracker})
-      const storageRoot = slice.leaves[sha3(address).toString('hex')].storageRoot
+      const storageRoot = slice.leaves[keccak256(address).toString('hex')].storageRoot
       const storagePath = addrToPath(key)
       const storageSlice = await sliceTracker.getSliceById(`${storagePath}-${depth}-${storageRoot}`)
       res.result = `0x${getStorageFromSlice({ slice: storageSlice, key })}`

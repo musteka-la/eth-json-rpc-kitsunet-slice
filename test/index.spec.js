@@ -23,11 +23,11 @@ const BALANCE_ADDRESS = '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5' // gnosis
 const TOKEN_HOLDER_STORAGE_KEY = '0x04c7252b79c4d84f9705be5e66c098c238e636b660b234c6c6a46ec04cd00fcc'
 const CONTRACT_ADDRESS = '0x6810e776880c02933d47db1b9fc05908e5386b96'
 
-function normalizeSlice (obj) {
+function normalizeKeys (obj) {
   return transform(obj, (result, value, key) => {
     if (key === 'metadata') { return }
     if (isPlainObject(value)) {
-      value = normalizeSlice(value)
+      value = normalizeKeys(value)
     }
 
     if (key.indexOf('-') > 0) {
@@ -37,9 +37,9 @@ function normalizeSlice (obj) {
   }, {})
 }
 
-const balanceSlice = normalizeSlice(require('./nano-pool-slice.json').result)
-const tokenSlice = normalizeSlice(require('./token-holder-slice.json').result)
-const tokenContractSlice = normalizeSlice(require('./token-contract-slice.json').result)
+const balanceSlice = normalizeKeys(require('./nano-pool-slice.json').result)
+const tokenSlice = normalizeKeys(require('./token-holder-slice.json').result)
+const tokenContractSlice = normalizeKeys(require('./token-contract-slice.json').result)
 
 it('provider - balance query', function (done) {
   this.timeout(1000000)
