@@ -126,7 +126,7 @@ function createSliceMiddleware ({ sliceTracker, eth, depth }) {
       const slice = await getSliceByBlockRef({path, depth, blockRef, eth, sliceTracker, isStorage: true})
       const storageRoot = slice.leaves[keccak256(address).toString('hex')].storageRoot
       const storagePath = addrToPath(key)
-      const storageSlice = await sliceTracker.getSliceById(`${storagePath}-${depth}-${storageRoot}`)
+      const storageSlice = await sliceTracker.getSliceById(`${storagePath}-${depth}-${storageRoot}`, true)
       res.result = `0x${getStorageFromSlice({ slice: storageSlice, key })}`
       end()
     }
