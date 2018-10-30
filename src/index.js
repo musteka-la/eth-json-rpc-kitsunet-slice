@@ -41,9 +41,14 @@ function findNode ({ slice, key }) {
   const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
   const sliceNodes = slice.trieNodes.sliceNodes
 
-  let node = Object.keys(sliceNodes).length > 0
-    ? rlp.decode(`0x${sliceNodes[head[parseInt(rest.shift(), 16)].toString('hex')]}`)
-    : head
+  let node
+  if (Object.keys(sliceNodes).length) {
+    const index = parseInt(rest.shift(), 16)
+    const headNode = head[index]
+    node = rlp.decode(`0x${sliceNodes[headNode.toString('hex')]}`)
+  } else {
+    node = head
+  }
 
   do {
     switch (node.length) {
@@ -62,7 +67,13 @@ function findNode ({ slice, key }) {
         }
     }
 
-    node = rlp.decode(`0x${sliceNodes[node[parseInt(rest.shift(), 16)].toString('hex')]}`)
+    const index = parseInt(rest.shift(), 16)
+    if (!node[index]) {
+      throw new Error(`${index} doesn't exist in slice`)
+    }
+
+    const nodeRlp = `0x${sliceNodes[node[index].toString('hex')]}`
+    node = rlp.decode(nodeRlp)
   } while (rest.length)
 }
 
