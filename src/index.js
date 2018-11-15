@@ -9,7 +9,7 @@ const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 module.exports = createSliceMiddleware
 
-async function getSliceByBlockRef ({path, depth, blockRef, eth, sliceTracker, isStorage}) {
+async function getSliceByBlockRef ({ path, depth, blockRef, eth, sliceTracker, isStorage }) {
   let slice = null
   if (blockRef === 'latest') {
     slice = await sliceTracker.getLatestSlice(path, depth, isStorage)
@@ -21,7 +21,7 @@ async function getSliceByBlockRef ({path, depth, blockRef, eth, sliceTracker, is
   return slice
 }
 
-function lookupAccountInSlice ({slice, address}) {
+function lookupAccountInSlice ({ slice, address }) {
   const node = findNode({ slice, key: address })
   const account = new EthAccount(node)
   if (account.isEmpty()) {
@@ -30,8 +30,8 @@ function lookupAccountInSlice ({slice, address}) {
   return account
 }
 
-function getStorageFromSlice ({slice, key}) {
-  const node = findNode({slice, key})
+function getStorageFromSlice ({ slice, key }) {
+  const node = findNode({ slice, key })
   return rlp.decode(node).toString('hex')
 }
 
@@ -77,7 +77,7 @@ function findNode ({ slice, key }) {
   } while (rest.length)
 }
 
-function lookupCodeInSlice ({slice, address}) {
+function lookupCodeInSlice ({ slice, address }) {
   return slice.leaves[keccak256(address).toString('hex')].evmCode
 }
 
@@ -98,8 +98,8 @@ function createSliceMiddleware ({ sliceTracker, eth, depth }) {
       }
 
       const path = addrToPath(address)
-      const slice = await getSliceByBlockRef({path, depth, blockRef, eth, sliceTracker})
-      const account = lookupAccountInSlice({slice, address})
+      const slice = await getSliceByBlockRef({ path, depth, blockRef, eth, sliceTracker })
+      const account = lookupAccountInSlice({ slice, address })
       res.result = `0x${account.balance.toString('hex')}`
       end()
     },
@@ -112,7 +112,7 @@ function createSliceMiddleware ({ sliceTracker, eth, depth }) {
       }
 
       const path = addrToPath(address)
-      const slice = await getSliceByBlockRef({path, depth, blockRef, eth, sliceTracker})
+      const slice = await getSliceByBlockRef({ path, depth, blockRef, eth, sliceTracker })
       const account = lookupAccountInSlice({ slice, address })
       res.result = `0x${account.nonce.toString('hex')}`
       end()
@@ -134,7 +134,7 @@ function createSliceMiddleware ({ sliceTracker, eth, depth }) {
     eth_getStorageAt: async (req, res, next, end) => {
       const [address, key, blockRef] = req.params
       const path = addrToPath(address)
-      const slice = await getSliceByBlockRef({path, depth, blockRef, eth, sliceTracker, isStorage: true})
+      const slice = await getSliceByBlockRef({ path, depth, blockRef, eth, sliceTracker, isStorage: true })
       const storageRoot = slice.leaves[keccak256(address).toString('hex')].storageRoot
       const storagePath = addrToPath(key)
       const storageSlice = await sliceTracker.getSliceById(`${storagePath}-${depth}-${storageRoot}`, true)
