@@ -28,7 +28,6 @@
     "eth-query": "^2.1.2",
     "ethjs": "^0.3.8",
     "json-rpc-engine": "^3.0.0",
-    "kitsunet-slice-tracker": "musteka-la/kitsunet-slice-tracker.git#master",
     "leftpad": "0.0.1",
     "lodash.camelcase": "^4.3.0",
     "lodash.isplainobject": "^4.0.6",
