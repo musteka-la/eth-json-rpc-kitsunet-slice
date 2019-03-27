@@ -8,9 +8,9 @@ const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 module.exports = createSliceMiddleware
 
-function createSliceMiddleware ({ kitsunetClient, depth }) {
-  async function getSliceByBlock ({ path, blockRef, isStorage }) {
-    return kitsunetClient.getSliceForBlock(blockRef, `${path}-${depth}`)
+function createSliceMiddleware ({ kitsunet, depth }) {
+  async function getSliceForBlock ({ path, blockRef, isStorage }) {
+    return kitsunet.getSliceForBlock(blockRef, `${path}-${depth}`)
   }
 
   function lookupAccountInSlice ({ slice, address }) {
@@ -30,8 +30,8 @@ function createSliceMiddleware ({ kitsunetClient, depth }) {
   function findNode ({ slice, key }) {
     const rest = keccak256(key).toString('hex').slice(4).split('')
     // TODO: we should calculate the head
-    const head = rlp.decode(`0x${slice.trieNodes.head[Object.keys(slice.trieNodes.head)[0]]}`)
-    const sliceNodes = slice.trieNodes.sliceNodes
+    const head = rlp.decode(`0x${slice.head[Object.keys(slice.head)[0]]}`)
+    const sliceNodes = slice.sliceNodes
 
     let node
     if (Object.keys(sliceNodes).length) {
@@ -88,7 +88,7 @@ function createSliceMiddleware ({ kitsunetClient, depth }) {
       }
 
       const path = addrToPath(address)
-      const slice = await getSliceByBlock({ path, blockRef })
+      const slice = await getSliceForBlock({ path, blockRef })
       const account = lookupAccountInSlice({ slice, address })
       res.result = `0x${account.balance.toString('hex')}`
       end()
@@ -102,7 +102,7 @@ function createSliceMiddleware ({ kitsunetClient, depth }) {
       }
 
       const path = addrToPath(address)
-      const slice = await getSliceByBlock({ path, blockRef })
+      const slice = await getSliceForBlock({ path, blockRef })
       const account = lookupAccountInSlice({ slice, address })
       res.result = `0x${account.nonce.toString('hex')}`
       end()
@@ -116,7 +116,7 @@ function createSliceMiddleware ({ kitsunetClient, depth }) {
       }
 
       const path = addrToPath(address)
-      const slice = await getSliceByBlock({ path, blockRef })
+      const slice = await getSliceForBlock({ path, blockRef })
       res.result = `0x${lookupCodeInSlice({ slice, address })}`
       end()
     },
@@ -124,10 +124,10 @@ function createSliceMiddleware ({ kitsunetClient, depth }) {
     eth_getStorageAt: async (req, res, next, end) => {
       const [address, key, blockRef] = req.params
       const path = addrToPath(address)
-      const slice = await getSliceByBlock({ path, blockRef, isStorage: true })
+      const slice = await getSliceForBlock({ path, blockRef, isStorage: true })
       const storageRoot = slice.leaves[keccak256(address).toString('hex')].storageRoot
       const storagePath = addrToPath(key)
-      const storageSlice = await kitsunetClient.getSliceById(`${storagePath}-${depth}-${storageRoot}`, true)
+      const storageSlice = await kitsunet.getSliceById(`${storagePath}-${depth}-${storageRoot}`, true)
       res.result = `0x${getStorageFromSlice({ slice: storageSlice, key })}`
       end()
     }
