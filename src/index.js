@@ -127,7 +127,7 @@ function createSliceMiddleware ({ kitsunet, depth }) {
       const slice = await getSliceForBlock({ path, blockRef, isStorage: true })
       const storageRoot = slice.leaves[keccak256(address).toString('hex')].storageRoot
       const storagePath = addrToPath(key)
-      const storageSlice = await kitsunet.getSliceById(`${storagePath}-${depth}-${storageRoot}`, true)
+      const storageSlice = await kitsunet.getSlice(`${storagePath}-${depth}-${storageRoot}`, true)
       res.result = `0x${getStorageFromSlice({ slice: storageSlice, key })}`
       end()
     }
